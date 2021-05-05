@@ -1,9 +1,11 @@
+add_library('toxiclibs')
 add_library('hemesh')
-import random
+import random, time
 add_library('queasycam')
 
 noiseGrid = []
 heightGrid = []
+mesh = []
 trees = []
 scaled = 10
 generating = True
@@ -14,10 +16,11 @@ grassLevel = .5
 
 def setup():
     global cam
-    size(1200, 1200, P3D)
+    size(800, 800, P3D)
     #worldwidth = 800
     #worldHeight = 800
     #cam = Camera(this)
+
     cam = QueasyCam(this)
     #cam.sensitivity = 0.5
     #cam.speed = 5
@@ -29,11 +32,14 @@ def setup():
     
     
     generate_noise()
+    generate_mesh_verts()
+    sphereDetail(1)
+    #print(mesh)
 def draw():
     lights()
     ambientLight(50,50,50)
-    background(255)
 
+    background(255)
 
     newPosY = retrieveHeight()-20
     #print(newPosY)
@@ -42,7 +48,9 @@ def draw():
     #cam.tilt=(0)
     
     #print(cam.getForward(), cam.position.x, cam.position.z)
-    draw_noise()
+    #draw_noise()
+    draw_points()
+    #print(len(mesh), len(noiseGrid))
     for tree in trees:
         tree.renderTree()
 
@@ -76,8 +84,39 @@ def generate_noise():
             x_off = x*noiseScale
             noiseGrid.append(noise(x_off,y_off))
             heightGrid.append(-((noise(x_off,y_off)*10)**2.5))
-    
 
+def generate_mesh_verts():
+    global mesh
+    z = 0
+    x = 0
+    
+    for n in noiseGrid:
+        
+        n_mag = -(map(n,0,1,0,10))**2.5
+        mesh.append([x, n_mag/2, z])
+        #mesh.append([x, n_mag/2, z])
+        x+=scaled
+        if x == width:
+            z += scaled
+            x = 0
+def draw_points():
+    fill(200)
+    #noStroke()
+    beginShape(QUAD_STRIP)
+    for i, vert in enumerate(mesh):
+        
+        #pushMatrix()
+        vertex(vert[0], vert[1], vert[2])
+    
+        if i < len(mesh)-width/scaled:
+            vertex(mesh[i+width/scaled][0], mesh[i+width/scaled][1], mesh[i+width/scaled][2])
+        else:
+            continue
+    
+        
+        #popMatrix()
+    endShape()
+    
 def draw_noise():
     
     #translate(-width/2, 0, -width/2)
@@ -85,17 +124,13 @@ def draw_noise():
     z = 0
     x = 0
     topWaterHeight = -(waterHeight*10)**2.5
-    beginShape(QUAD_STRIP)
-    for n in noiseGrid:
+    #beginShape(TRIANGLE_STRIP)
+    for count, n in enumerate(noiseGrid):
         pushMatrix()
-        
-        
         n_mag = -(map(n,0,1,0,10))**2.5
-        
-        #vertex(x, n_mag/2, z+10)
-        #vertex(x+scaled/2, n_mag/2, z)
+        #
         translate(x, n_mag/2, z)
-        #noStroke()
+        noStroke()
         fill(terrainClassifier(n))
         #noFill()
         box(scaled, n_mag, scaled)
@@ -119,7 +154,7 @@ def draw_noise():
         if x == width:
             z += scaled
             x = 0
-            endShape()
+        #endShape()
     generating = False
     
         
